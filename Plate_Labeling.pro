@@ -39,22 +39,3 @@ FORMS += \
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
-
-
-#win32:CONFIG(release, debug|release): LIBS += -LD:/opencv/build/x64/vc15/lib/ -lopencv_world440
-#else:win32:CONFIG(debug, debug|release): LIBS += -LD:/opencv/build/x64/vc15/lib/ -lopencv_world440d
-#else:unix: LIBS += -LD:/opencv/build/x64/vc15/lib/ -lopencv_world440
-
-
-#Automat. added
-
-# Debug
-
-
-#win32: LIBS += -L$$PWD/../vcpkg/tesseract_x64-windows-static/lib/packages/x64-windows-static/debug/lib/ -ltesseract41d
-
-#INCLUDEPATH += $$PWD/../vcpkg/installed/x64-windows-static/include
-#DEPENDPATH += $$PWD/../vcpkg/installed/x64-windows-static/include
-
-#win32:!win32-g++: PRE_TARGETDEPS += $$PWD/../vcpkg/installed/x64-windows-static/debug/lib/tesseract41d.lib
-#else:win32-g++: PRE_TARGETDEPS += $$PWD/../vcpkg/installed/x64-windows-static/debug/lib/libtesseract41d.a
