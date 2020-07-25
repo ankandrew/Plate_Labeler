@@ -10,6 +10,7 @@ Ejemplo de uso: si sequiere construir un **CNN+RNN** o algo de ese estilo para r
 ## Uso
 
 Copiar todas las imagenes en la carpeta `Plate_Labeler/imgs/` y luego correr la aplicación.
+Las anotaciones se guarda en el archivo results.txt (separado por tab)
 
 ## Shortcuts
 
