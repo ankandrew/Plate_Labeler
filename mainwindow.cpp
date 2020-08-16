@@ -101,7 +101,7 @@ void MainWindow::on_btn_siguiente_clicked()
     // Add to map
     if(!this->plate_frequency.contains(input_patente))
     {
-        this->plate_frequency[input_patente] = 0;
+        this->plate_frequency[input_patente] = 1;
     } else {
         this->plate_frequency[input_patente] += 1;
     }
