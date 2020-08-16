@@ -12,6 +12,8 @@ Ejemplo de uso: si sequiere construir un **CNN+RNN** o algo de ese estilo para r
 Copiar todas las imagenes en la carpeta `Plate_Labeler/imgs/` y luego correr la aplicación.
 Las anotaciones se guarda en el archivo results.txt (separado por tab)
 
+Las imagenes anotadas se muevan a `done_imgs/`
+
 ## Shortcuts
 
 `ESC` se borra/descarta la imagen actual
@@ -34,4 +36,6 @@ De esta forma se pueden guardar en `img_pred.txt` las predicciones hechas por un
 
 Si la patente ya esta registrada mas de 2 veces, se notifica con un MsgBox de confirmacion
 
-*Esta aplicacion es la que se utiliza para labelear las patentes para este (proyecto)[https://github.com/ankandrew/cnn-ocr-lp]*
+## Usos Practicos
+
+*Esta aplicacion es la que se utiliza para labelear las patentes para este [proyecto](https://github.com/ankandrew/cnn-ocr-lp)*
