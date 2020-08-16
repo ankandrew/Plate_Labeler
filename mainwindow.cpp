@@ -15,17 +15,28 @@ MainWindow::MainWindow(QWidget *parent) :
     file_result("results.txt")
 {
     ui->setupUi(this);
-    // Iterator for listing .jpg's
-    this->iter = new QDirIterator("imgs/", QStringList() << "*.png", QDir::Files);
+    // Iterator for listing .png's
+//    this->iter = new QDirIterator("imgs/", QStringList() << "*.png", QDir::Files);
+    this->iter = new QDirIterator("imgs/", QDir::Files);
     // Show first img
     if(this->iter->hasNext()){
         const QPixmap pix(this->iter->next());
         ui->plate_img->setPixmap(pix.scaled(250,250,Qt::KeepAspectRatio));
     } else {
         this->fin_imagenes();
+        QMessageBox::warning(this, tr("Patente Labeler"),
+                                       tr("Asegura que hay imagenes en imgs/.\n"
+                                          "No se encontro ninguna"),
+                                       QMessageBox::Ok);
+        return;
     }
     this->list_count = 1;
-
+    // Load pantente_freq con las del .txt
+    this->cargar_freq_txt();
+    // Load las predicciones (pseudo-labeling)
+    this->cargar_pred_txt();
+    // Mostrar primera prediccion
+    this->mostrar_pred();
 }
 
 MainWindow::~MainWindow()
@@ -39,7 +50,7 @@ MainWindow::~MainWindow()
 // Shortcuts
 void MainWindow::keyPressEvent(QKeyEvent *e)
 {
-  if ((e->key()==Qt::Key_Return))
+  if ((e->key()==Qt::Key_Enter) || (e->key()==Qt::Key_Return))
   {
     this->on_btn_siguiente_clicked();
   }
@@ -54,7 +65,7 @@ void MainWindow::keyPressEvent(QKeyEvent *e)
 
 void MainWindow::on_btn_siguiente_clicked()
 {
-    const QString input_patente = ui->txt_patente->toPlainText().trimmed();
+    const QString input_patente = ui->txt_patente->text().trimmed().toUpper();
     // valid plate
     if(!this->valid_plate(input_patente))
     {
@@ -64,14 +75,38 @@ void MainWindow::on_btn_siguiente_clicked()
                                        QMessageBox::Ok);
         return;
     }
+    // Checkear si esta registrada mas de 2 veces
+    if(this->plate_frequency.contains(input_patente))
+    {
+        if(this->plate_frequency[input_patente] > 2)
+        {
+            int ret = QMessageBox::question(this, tr("Patente Labeler"),
+                                           QString("%1 fue registrada mas de 2 veces\nSeguro desea ingresar?")
+                                            .arg(input_patente),
+                                           QMessageBox::Yes | QMessageBox::No,
+                                           QMessageBox::Yes);
+            if(ret == QMessageBox::No)
+            {
+                return;
+            }
+        }
+    }
     // Write to file
-    if(file_result.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)){
+    if(file_result.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text))
+    {
          QTextStream stream(&file_result);
-         stream << "imgs/" << this->iter->fileName() << '\t' << input_patente.toUpper() << '\n';
+         stream << "imgs/" << this->iter->fileName() << '\t' << input_patente << '\n';
          file_result.close();
     }
+    // Add to map
+    if(!this->plate_frequency.contains(input_patente))
+    {
+        this->plate_frequency[input_patente] = 0;
+    } else {
+        this->plate_frequency[input_patente] += 1;
+    }
     // Show only last 10 plates
-    if(list_count % 10 == 0)
+    if(list_count % 30 == 0)
     {
         ui->list_last_plates->clear();
     }
@@ -82,6 +117,8 @@ void MainWindow::on_btn_siguiente_clicked()
 
 void MainWindow::next_image()
 {
+    // Clean input text
+    ui->txt_patente->setText("");
     // Increase image count
     this->list_count += 1;
     // Move image to 'done_imgs/'
@@ -91,6 +128,7 @@ void MainWindow::next_image()
     if(this->iter->hasNext()){
         const QPixmap pix(this->iter->next());
         ui->plate_img->setPixmap(pix.scaled(250,250,Qt::KeepAspectRatio));
+        this->mostrar_pred();
     } else {
         this->fin_imagenes();
         // Quit app.
@@ -105,8 +143,6 @@ void MainWindow::next_image()
             QCoreApplication::quit();
         }
     }
-    // Clean input text
-    ui->txt_patente->setText("");
 }
 
 bool MainWindow::valid_plate(const QString input_text){
@@ -141,3 +177,67 @@ void MainWindow::fin_imagenes()
 
 }
 
+void MainWindow::cargar_freq_txt()
+{
+    if(!file_result.open(QIODevice::ReadOnly)) {
+        QMessageBox::information(0, "Asegurar que existe el archivo results.txt", file_result.errorString());
+        return;
+    }
+
+    QTextStream in(&file_result);
+
+    while(!in.atEnd()) {
+        const QString linea = in.readLine();
+        const QString patente = linea.split("\t")[1].trimmed();
+        if(!this->plate_frequency.contains(patente))
+        {
+            this->plate_frequency[patente] = 1;
+        } else {
+            this->plate_frequency[patente] += 1;
+        }
+    }
+
+    file_result.close();
+}
+
+void MainWindow::cargar_pred_txt()
+{
+    QFile file_preds("img_pred.txt");
+    if(!file_preds.open(QIODevice::ReadOnly)) {
+        QMessageBox::information(0, "Plate Labeler", "No se van a cargar las predicciones (No Pseudo-Labeling)");
+        return;
+    }
+
+    QTextStream in(&file_preds);
+    in.readLine();
+    while(!in.atEnd()) {
+        const QString linea = in.readLine();
+        QStringList entry = linea.split("\t");
+        const QString plate_filename = entry[0].split("\\").constLast();
+        // Remove filename (first element)
+        entry.removeFirst();
+        this->plate_prediction[plate_filename] = entry;
+    }
+
+    file_result.close();
+}
+
+void MainWindow::mostrar_pred()
+{
+    const QString current_filename = this->iter->fileName();
+    // Display prediction for current image
+    if(!this->plate_prediction.empty() && this->plate_prediction.contains(current_filename))
+    {
+        const QStringList plate_conf = this->plate_prediction[current_filename];
+        ui->txt_patente->setText(plate_conf[0]);
+        ui->lbl_confianza->setText("Confianza " + plate_conf[1] + " %");
+    }
+}
+
+
+void MainWindow::on_btn_freq_clicked()
+{
+    const QString patente = ui->txt_patente->text().trimmed().toUpper();
+    const int freq_num = this->plate_frequency[patente];
+    ui->txt_freq->setText(QString("Frequency %1").arg(freq_num));
+}

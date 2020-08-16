@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QDirIterator>
+#include <QHash>
 
 namespace Ui {
 class MainWindow;
@@ -23,6 +24,8 @@ private slots:
 
     void keyPressEvent(QKeyEvent *e);
 
+    void on_btn_freq_clicked();
+
 private:
     Ui::MainWindow *ui;
     QDirIterator *iter;
@@ -34,6 +37,13 @@ private:
 
     int list_count;
 
+    QHash<QString, int> plate_frequency;
+    void cargar_freq_txt();
+
+    QHash<QString, QStringList> plate_prediction;
+    void cargar_pred_txt();
+
+    void mostrar_pred();
 };
 
 #endif // MAINWINDOW_H
